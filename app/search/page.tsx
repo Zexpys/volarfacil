@@ -99,14 +99,16 @@ export default function SearchPage() {
 
       {/* Alert Banner */}
       {searched && !loading && (
-        <div className="bg-green-950 border border-green-800/50 rounded-xl p-4 mb-6 flex items-start gap-3">
-          <span className="text-green-400 mt-0.5">🔔</span>
-          <div>
-            <p className="text-green-300 font-medium text-sm">Want instant alerts for this route?</p>
-            <p className="text-green-600 text-xs mt-0.5">Upgrade to Pro and get notified the second seats drop on {origin} → {destination}.</p>
+        <div className="bg-green-950 border border-green-800/50 rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start gap-3">
+          <div className="flex items-start gap-3 flex-1">
+            <span className="text-green-400 mt-0.5">🔔</span>
+            <div>
+              <p className="text-green-300 font-medium text-sm">Want instant alerts for this route?</p>
+              <p className="text-green-600 text-xs mt-0.5">Upgrade to Pro and get notified the second seats drop on {origin} → {destination}.</p>
+            </div>
           </div>
-          <button className="ml-auto bg-green-500 hover:bg-green-400 text-black text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors">
-            Set alert
+          <button className="w-full sm:w-auto bg-green-500 hover:bg-green-400 text-black text-xs font-bold px-3 py-2 rounded-lg transition-colors">
+            Set alert →
           </button>
         </div>
       )}
@@ -145,29 +147,29 @@ export default function SearchPage() {
                     : 'border-white/5 opacity-50'
                 }`}
               >
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex items-center gap-6">
-                    <div className="text-center">
-                      <p className="text-xl font-bold text-white">{flight.departure}</p>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex items-center gap-4 sm:gap-6">
+                    <div className="text-center min-w-[52px]">
+                      <p className="text-lg sm:text-xl font-bold text-white">{flight.departure}</p>
                       <p className="text-xs text-gray-500">{origin}</p>
                     </div>
-                    <div className="text-center text-gray-600">
+                    <div className="text-center text-gray-600 flex-1">
                       <p className="text-xs mb-1">{flight.duration}</p>
-                      <div className="flex items-center gap-1">
-                        <div className="w-8 h-px bg-gray-700" />
+                      <div className="flex items-center gap-1 justify-center">
+                        <div className="w-6 sm:w-8 h-px bg-gray-700" />
                         <span className="text-xs">✈</span>
-                        <div className="w-8 h-px bg-gray-700" />
+                        <div className="w-6 sm:w-8 h-px bg-gray-700" />
                       </div>
                       <p className="text-xs mt-1 text-green-500">Nonstop</p>
                     </div>
-                    <div className="text-center">
-                      <p className="text-xl font-bold text-white">{flight.arrival}</p>
+                    <div className="text-center min-w-[52px]">
+                      <p className="text-lg sm:text-xl font-bold text-white">{flight.arrival}</p>
                       <p className="text-xs text-gray-500">{destination}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
+                    <div>
                       <p className="text-xs text-gray-500">{flight.airline} · {flight.flightNumber}</p>
                       {flight.available ? (
                         <p className="text-sm text-yellow-400 font-medium mt-1">
@@ -178,10 +180,10 @@ export default function SearchPage() {
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-white">
-                        {flight.price > 0 ? `$${flight.price} MXN` : 'Free'}
+                      <p className="text-xl sm:text-2xl font-bold text-white">
+                        {flight.price > 0 ? `$${flight.price}` : 'Free'}
                       </p>
-                      <p className="text-xs text-gray-500">with your pass</p>
+                      <p className="text-xs text-gray-500">MXN · with pass</p>
                     </div>
                     {flight.available ? (
                       <button className="bg-green-500 hover:bg-green-400 text-black font-bold px-4 py-2 rounded-lg text-sm transition-colors whitespace-nowrap">
@@ -189,7 +191,7 @@ export default function SearchPage() {
                       </button>
                     ) : (
                       <button className="bg-gray-800 text-gray-600 font-bold px-4 py-2 rounded-lg text-sm cursor-not-allowed whitespace-nowrap">
-                        Unavailable
+                        Sold out
                       </button>
                     )}
                   </div>
