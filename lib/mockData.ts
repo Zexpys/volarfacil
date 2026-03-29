@@ -1,16 +1,45 @@
 export const AIRPORTS = [
+  // USA
   { code: 'OAK', name: 'Oakland', country: 'US' },
   { code: 'SFO', name: 'San Francisco', country: 'US' },
   { code: 'SMF', name: 'Sacramento', country: 'US' },
   { code: 'SJC', name: 'San Jose', country: 'US' },
   { code: 'LAX', name: 'Los Angeles', country: 'US' },
-  { code: 'MLM', name: 'Morelia', country: 'MX' },
-  { code: 'GDL', name: 'Guadalajara', country: 'MX' },
-  { code: 'MEX', name: 'Mexico City', country: 'MX' },
-  { code: 'CUN', name: 'Cancun', country: 'MX' },
-  { code: 'MTY', name: 'Monterrey', country: 'MX' },
   { code: 'LAS', name: 'Las Vegas', country: 'US' },
   { code: 'JFK', name: 'New York (JFK)', country: 'US' },
+  { code: 'ORD', name: 'Chicago (O\'Hare)', country: 'US' },
+  { code: 'DFW', name: 'Dallas/Fort Worth', country: 'US' },
+  { code: 'IAH', name: 'Houston', country: 'US' },
+  { code: 'PHX', name: 'Phoenix', country: 'US' },
+  { code: 'SAN', name: 'San Diego', country: 'US' },
+  { code: 'ONT', name: 'Ontario (CA)', country: 'US' },
+  { code: 'DEN', name: 'Denver', country: 'US' },
+  // Mexico — Major
+  { code: 'MEX', name: 'Mexico City', country: 'MX' },
+  { code: 'GDL', name: 'Guadalajara', country: 'MX' },
+  { code: 'MTY', name: 'Monterrey', country: 'MX' },
+  { code: 'CUN', name: 'Cancun', country: 'MX' },
+  { code: 'TIJ', name: 'Tijuana', country: 'MX' },
+  { code: 'MLM', name: 'Morelia', country: 'MX' },
+  { code: 'BJX', name: 'León/Bajío', country: 'MX' },
+  { code: 'MZT', name: 'Mazatlán', country: 'MX' },
+  { code: 'PVR', name: 'Puerto Vallarta', country: 'MX' },
+  { code: 'SJD', name: 'Los Cabos', country: 'MX' },
+  { code: 'AGU', name: 'Aguascalientes', country: 'MX' },
+  { code: 'CUL', name: 'Culiacán', country: 'MX' },
+  { code: 'HMO', name: 'Hermosillo', country: 'MX' },
+  { code: 'MID', name: 'Mérida', country: 'MX' },
+  { code: 'OAX', name: 'Oaxaca', country: 'MX' },
+  { code: 'SLP', name: 'San Luis Potosí', country: 'MX' },
+  { code: 'VER', name: 'Veracruz', country: 'MX' },
+  { code: 'ZIH', name: 'Ixtapa/Zihuatanejo', country: 'MX' },
+  { code: 'ZCL', name: 'Zacatecas', country: 'MX' },
+  { code: 'MXL', name: 'Mexicali', country: 'MX' },
+  { code: 'TAM', name: 'Tampico', country: 'MX' },
+  { code: 'VSA', name: 'Villahermosa', country: 'MX' },
+  { code: 'LMM', name: 'Los Mochis', country: 'MX' },
+  { code: 'ZLO', name: 'Manzanillo', country: 'MX' },
+  { code: 'TGZ', name: 'Tuxtla Gutiérrez', country: 'MX' },
 ]
 
 export interface Flight {
@@ -33,8 +62,10 @@ function seededRand(seed: number) {
   return x - Math.floor(x)
 }
 
+const MX_AIRPORTS = new Set(AIRPORTS.filter(a => a.country === 'MX').map(a => a.code))
+
 export function getMockFlights(origin: string, destination: string): Flight[] {
-  const isInternational = ['MLM','GDL','MEX','CUN','MTY'].includes(destination) || ['MLM','GDL','MEX','CUN','MTY'].includes(origin)
+  const isInternational = MX_AIRPORTS.has(origin) || MX_AIRPORTS.has(destination)
   const seed = origin.charCodeAt(0) + destination.charCodeAt(0)
 
   return [
