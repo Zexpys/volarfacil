@@ -1,9 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { AIRPORTS, getMockFlights, Flight } from '@/lib/mockData'
 
-export default function SearchPage() {
+function SearchContent() {
   const params = useSearchParams()
   const [origin, setOrigin] = useState(params.get('origin') || 'OAK')
   const [destination, setDestination] = useState(params.get('destination') || 'MLM')
@@ -210,5 +210,13 @@ export default function SearchPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="max-w-4xl mx-auto px-4 py-10 text-gray-400">Loading...</div>}>
+      <SearchContent />
+    </Suspense>
   )
 }
