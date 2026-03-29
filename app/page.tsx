@@ -56,6 +56,7 @@ export default function Home() {
             {h.h1a}<br />
             <span className="text-green-400">{h.h1b}</span>
           </h1>
+
           <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-10">{h.subtitle}</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/search" className="bg-green-500 hover:bg-green-400 text-black font-bold px-8 py-3.5 rounded-xl transition-colors text-lg">
