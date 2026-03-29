@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import Stripe from 'stripe'
 import { stripe, STRIPE_PRICE_PRO, STRIPE_COUPON_REFERRAL_50, TRIAL_DAYS } from '@/lib/stripe'
 import { supabaseAdmin, getUserFromToken } from '@/lib/supabase-admin'
 
@@ -50,9 +51,8 @@ export async function POST(request: NextRequest) {
   let validatedRefCode: string | null = null
 
   if (introOffer === 'referral' && refCode) {
-    // Self-referral check
     if (refCode === profile?.referral_code) {
-      finalOffer = 'trial' // silently fall back — no error shown to prevent probing
+      finalOffer = 'trial' // self-referral: silently fall back
     } else {
       const { data: referrer } = await supabaseAdmin
         .from('profiles')
@@ -69,15 +69,14 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 6. Build Stripe checkout session
+  // 6. Build Stripe checkout session — use Stripe.Checkout.SessionCreateParams type
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
-  const sessionParams: Parameters<typeof stripe.checkout.sessions.create>[0] = {
+  const sessionParams: Stripe.Checkout.SessionCreateParams = {
     customer: customerId,
     mode: 'subscription',
     line_items: [{ price: STRIPE_PRICE_PRO, quantity: 1 }],
     success_url: `${siteUrl}/account?checkout=success`,
     cancel_url: `${siteUrl}/pricing`,
-    // Attach metadata so webhook knows context
     metadata: {
       user_id: user.id,
       intro_offer: finalOffer,
@@ -95,11 +94,9 @@ export async function POST(request: NextRequest) {
   }
 
   if (finalOffer === 'trial') {
-    // Card required upfront + 3-day free trial
     sessionParams.payment_method_collection = 'always'
     sessionParams.subscription_data!.trial_period_days = TRIAL_DAYS
   } else if (finalOffer === 'referral' && validatedRefCode) {
-    // 50% off first month coupon (no trial — these are mutually exclusive)
     sessionParams.discounts = [{ coupon: STRIPE_COUPON_REFERRAL_50 }]
   }
 
