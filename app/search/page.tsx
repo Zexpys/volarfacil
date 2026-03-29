@@ -1,11 +1,14 @@
 'use client'
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { AIRPORTS, getMockFlights, Flight } from '@/lib/mockData'
 
 export default function SearchPage() {
-  const [origin, setOrigin] = useState('OAK')
-  const [destination, setDestination] = useState('MLM')
-  const [date, setDate] = useState('')
+  const params = useSearchParams()
+  const [origin, setOrigin] = useState(params.get('origin') || 'OAK')
+  const [destination, setDestination] = useState(params.get('destination') || 'MLM')
+  const today = new Date().toISOString().split('T')[0]
+  const [date, setDate] = useState(params.get('date') || '')
   const [flights, setFlights] = useState<Flight[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
@@ -79,6 +82,7 @@ export default function SearchPage() {
               value={date}
               onChange={e => setDate(e.target.value)}
               className="bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+              min={today}
             />
           </div>
 
