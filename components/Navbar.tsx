@@ -1,11 +1,23 @@
 'use client'
 import Link from 'next/link'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const { lang, setLang, t } = useLanguage()
+  const { user, signOut } = useAuth()
+  const router = useRouter()
+
+  async function handleSignOut() {
+    await signOut()
+    router.push('/')
+    setOpen(false)
+  }
+
+  const displayEmail = user?.email ? (user.email.length > 20 ? user.email.slice(0, 18) + '…' : user.email) : ''
 
   return (
     <nav className="border-b border-white/10 bg-gray-950/90 backdrop-blur sticky top-0 z-50">
@@ -22,7 +34,6 @@ export default function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          {/* Language toggle */}
           <button
             onClick={() => setLang(lang === 'es' ? 'en' : 'es')}
             className="flex items-center gap-1.5 text-xs font-semibold bg-gray-800 border border-white/10 hover:border-white/30 px-2.5 py-1.5 rounded-lg transition-colors text-gray-300"
@@ -30,12 +41,25 @@ export default function Navbar() {
             <span>{lang === 'es' ? '🇲🇽' : '🇺🇸'}</span>
             <span>{lang === 'es' ? 'ES' : 'EN'}</span>
           </button>
-          <button className="text-sm text-gray-400 hover:text-white transition-colors px-3 py-1.5">
-            {t.nav.login}
-          </button>
-          <Link href="/pricing" className="bg-green-500 hover:bg-green-400 text-black font-semibold text-sm px-4 py-2 rounded-lg transition-colors">
-            {t.nav.getStarted}
-          </Link>
+
+          {user ? (
+            <>
+              <span className="text-xs text-gray-500 max-w-[160px] truncate">{displayEmail}</span>
+              <button onClick={handleSignOut}
+                className="text-sm text-gray-400 hover:text-white transition-colors px-3 py-1.5">
+                {t.auth.logout}
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="text-sm text-gray-400 hover:text-white transition-colors px-3 py-1.5">
+                {t.nav.login}
+              </Link>
+              <Link href="/signup" className="bg-green-500 hover:bg-green-400 text-black font-semibold text-sm px-4 py-2 rounded-lg transition-colors">
+                {t.nav.getStarted}
+              </Link>
+            </>
+          )}
         </div>
 
         <div className="md:hidden flex items-center gap-2">
@@ -59,7 +83,17 @@ export default function Navbar() {
           <Link href="/search" className="text-gray-300 hover:text-white" onClick={() => setOpen(false)}>{t.nav.search}</Link>
           <Link href="/calendar" className="text-gray-300 hover:text-white" onClick={() => setOpen(false)}>{t.nav.calendar}</Link>
           <Link href="/pricing" className="text-gray-300 hover:text-white" onClick={() => setOpen(false)}>{t.nav.pricing}</Link>
-          <Link href="/pricing" className="bg-green-500 text-black font-semibold px-4 py-2 rounded-lg text-center" onClick={() => setOpen(false)}>{t.nav.getStarted}</Link>
+          {user ? (
+            <>
+              <span className="text-xs text-gray-500">{user.email}</span>
+              <button onClick={handleSignOut} className="text-left text-red-400 hover:text-red-300">{t.auth.logout}</button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="text-gray-300 hover:text-white" onClick={() => setOpen(false)}>{t.nav.login}</Link>
+              <Link href="/signup" className="bg-green-500 text-black font-semibold px-4 py-2 rounded-lg text-center" onClick={() => setOpen(false)}>{t.nav.getStarted}</Link>
+            </>
+          )}
         </div>
       )}
     </nav>
