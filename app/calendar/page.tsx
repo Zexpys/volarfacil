@@ -12,7 +12,7 @@ export default function CalendarPage() {
   const [origin, setOrigin] = useState('OAK')
   const [destination, setDestination] = useState('MLM')
 
-  const calData = getCalendarData(year, month)
+  const calData = getCalendarData(year, month, origin, destination)
   const firstDay = new Date(year, month, 1).getDay()
   const available = calData.filter(d => d.status > 0).length
   const good = calData.filter(d => d.status >= 2).length
