@@ -17,7 +17,9 @@ export default function Navbar() {
     setOpen(false)
   }
 
-  const displayEmail = user?.email ? (user.email.length > 20 ? user.email.slice(0, 18) + '…' : user.email) : ''
+  const displayEmail = user?.email
+    ? (user.email.length > 22 ? user.email.slice(0, 20) + '…' : user.email)
+    : ''
 
   return (
     <nav className="border-b border-white/10 bg-gray-950/90 backdrop-blur sticky top-0 z-50">
@@ -44,7 +46,10 @@ export default function Navbar() {
 
           {user ? (
             <>
-              <span className="text-xs text-gray-500 max-w-[160px] truncate">{displayEmail}</span>
+              <Link href="/account"
+                className="text-xs text-gray-500 hover:text-white transition-colors max-w-[160px] truncate px-2">
+                {displayEmail}
+              </Link>
               <button onClick={handleSignOut}
                 className="text-sm text-gray-400 hover:text-white transition-colors px-3 py-1.5">
                 {t.auth.logout}
@@ -72,7 +77,8 @@ export default function Navbar() {
           </button>
           <button className="text-gray-400" onClick={() => setOpen(!open)}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={open ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d={open ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
             </svg>
           </button>
         </div>
@@ -85,7 +91,9 @@ export default function Navbar() {
           <Link href="/pricing" className="text-gray-300 hover:text-white" onClick={() => setOpen(false)}>{t.nav.pricing}</Link>
           {user ? (
             <>
-              <span className="text-xs text-gray-500">{user.email}</span>
+              <Link href="/account" className="text-gray-300 hover:text-white" onClick={() => setOpen(false)}>
+                {lang === 'es' ? 'Mi cuenta' : 'My account'}
+              </Link>
               <button onClick={handleSignOut} className="text-left text-red-400 hover:text-red-300">{t.auth.logout}</button>
             </>
           ) : (
