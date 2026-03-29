@@ -36,10 +36,10 @@ export default function Navbar() {
 
       {open && (
         <div className="md:hidden border-t border-white/10 px-4 py-4 flex flex-col gap-4 text-sm">
-          <Link href="/search" className="text-gray-300 hover:text-white">Search</Link>
-          <Link href="/calendar" className="text-gray-300 hover:text-white">Fare Calendar</Link>
-          <Link href="/pricing" className="text-gray-300 hover:text-white">Pricing</Link>
-          <Link href="/pricing" className="bg-green-500 text-black font-semibold px-4 py-2 rounded-lg text-center">Get started</Link>
+          <Link href="/search" className="text-gray-300 hover:text-white" onClick={() => setOpen(false)}>Search</Link>
+          <Link href="/calendar" className="text-gray-300 hover:text-white" onClick={() => setOpen(false)}>Fare Calendar</Link>
+          <Link href="/pricing" className="text-gray-300 hover:text-white" onClick={() => setOpen(false)}>Pricing</Link>
+          <Link href="/pricing" className="bg-green-500 text-black font-semibold px-4 py-2 rounded-lg text-center" onClick={() => setOpen(false)}>Get started</Link>
         </div>
       )}
     </nav>
