@@ -2,8 +2,7 @@ import Stripe from 'stripe'
 
 // Server-side Stripe client — never import this in client components
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-04-10',
-  typescript: true,
+  apiVersion: '2024-06-20',
 })
 
 // Stripe IDs — set these as Vercel environment variables after Stripe setup
@@ -16,5 +15,5 @@ export const TRIAL_DAYS = 3
 // Referral reward amount in cents
 export const REFERRAL_REWARD_CENTS = 1000 // $10
 
-// Maximum referral credits a user can hold at once (3 months)
-export const MAX_CREDIT_BALANCE_CENTS = 3000 // $30
+// Maximum referral credits a user can hold at once (3 months = $30)
+export const MAX_CREDIT_BALANCE_CENTS = 3000
