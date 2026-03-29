@@ -100,7 +100,7 @@ export const translations = {
         { name: 'Auto', desc: 'Para usuarios avanzados', cta: 'Obtener Auto' },
       ],
       features: {
-        free: ['5 búsquedas de vuelos por día', 'Vista básica de disponibilidad', 'Calculadora de precio total', 'Compatible con móvil'],
+        free: ['5 búsquedas de vuelos por día', 'Vista básica de disponibilidad', 'Calculadora de precio total', 'Compatible con celular'],
         freeMissing: ['Alertas de asientos', 'Calendario de vuelos', 'Búsquedas ilimitadas', 'Reserva automática'],
         pro: ['Búsquedas ilimitadas de vuelos', 'Alertas de caída de asientos (SMS + correo)', 'Calendario de vuelos — vista mensual completa', 'Optimizador de rutas', 'Calculadora de precio total', 'Mapa de disponibilidad', 'Cancela cuando quieras'],
         proMissing: ['Reserva automática'],
