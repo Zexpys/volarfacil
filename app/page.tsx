@@ -1,6 +1,22 @@
+'use client'
 import Link from 'next/link'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { AIRPORTS } from '@/lib/mockData'
 
 export default function Home() {
+  const router = useRouter()
+  const [origin, setOrigin] = useState('OAK')
+  const [destination, setDestination] = useState('MLM')
+  const [date, setDate] = useState('')
+  const today = new Date().toISOString().split('T')[0]
+
+  function handleQuickSearch(e: React.FormEvent) {
+    e.preventDefault()
+    const params = new URLSearchParams({ origin, destination })
+    if (date) params.set('date', date)
+    router.push(`/search?${params.toString()}`)
+  }
   return (
     <div>
       {/* Hero */}
@@ -33,37 +49,29 @@ export default function Home() {
 
       {/* Quick Search Bar */}
       <section className="max-w-4xl mx-auto px-4 -mt-4 mb-16">
-        <div className="bg-gray-900 border border-white/10 rounded-2xl p-4 md:p-6 shadow-2xl">
+        <form onSubmit={handleQuickSearch} className="bg-gray-900 border border-white/10 rounded-2xl p-4 md:p-6 shadow-2xl">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="flex flex-col gap-1">
               <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">From</label>
-              <select className="bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500">
-                <option>OAK — Oakland</option>
-                <option>SFO — San Francisco</option>
-                <option>SMF — Sacramento</option>
-                <option>SJC — San Jose</option>
-                <option>LAX — Los Angeles</option>
+              <select value={origin} onChange={e => setOrigin(e.target.value)} className="bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500">
+                {AIRPORTS.map(a => <option key={a.code} value={a.code}>{a.code} — {a.name}</option>)}
               </select>
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">To</label>
-              <select className="bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500">
-                <option>MLM — Morelia</option>
-                <option>GDL — Guadalajara</option>
-                <option>MEX — Mexico City</option>
-                <option>CUN — Cancun</option>
-                <option>LAS — Las Vegas</option>
+              <select value={destination} onChange={e => setDestination(e.target.value)} className="bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500">
+                {AIRPORTS.map(a => <option key={a.code} value={a.code}>{a.code} — {a.name}</option>)}
               </select>
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Date</label>
-              <input type="date" className="bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500" />
+              <input type="date" min={today} value={date} onChange={e => setDate(e.target.value)} className="bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500" />
             </div>
-            <Link href="/search" className="flex items-center justify-center bg-green-500 hover:bg-green-400 text-black font-bold rounded-lg transition-colors md:mt-5 py-3 md:py-2.5">
+            <button type="submit" className="flex items-center justify-center bg-green-500 hover:bg-green-400 text-black font-bold rounded-lg transition-colors md:mt-5 py-3 md:py-2.5">
               Search flights →
-            </Link>
+            </button>
           </div>
-        </div>
+        </form>
       </section>
 
       {/* Features */}
