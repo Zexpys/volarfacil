@@ -126,7 +126,7 @@ function SearchContent() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
             </svg>
-            {isInternational ? s.intlNote : s.domNote}
+            {s.loading}
           </div>
         </div>
       )}
@@ -182,7 +182,7 @@ function SearchContent() {
                     <div>
                       <p className="text-xs text-gray-500">{flight.airline} · {flight.flightNumber}</p>
                       {flight.available
-                        ? <p className="text-sm text-yellow-400 font-medium mt-1">{flight.seatsLeft} {s.seatsLeft}</p>
+                        ? <p className="text-sm text-yellow-400 font-medium mt-1">{flight.seatsLeft} {flight.seatsLeft === 1 ? s.seatSingular : s.seatPlural}</p>
                         : <p className="text-sm text-gray-600 mt-1">{s.soldOut}</p>}
                     </div>
                     <div className="text-right">
@@ -190,7 +190,7 @@ function SearchContent() {
                       <p className="text-xs text-gray-500">{s.withPass}</p>
                     </div>
                     {flight.available
-                      ? <button className="bg-green-500 hover:bg-green-400 text-black font-bold px-4 py-2 rounded-lg text-sm transition-colors whitespace-nowrap">{s.bookBtn}</button>
+                      ? <a href="https://www.volaris.com/pase-anual" target="_blank" rel="noopener noreferrer" className="bg-green-500 hover:bg-green-400 text-black font-bold px-4 py-2 rounded-lg text-sm transition-colors whitespace-nowrap">{s.bookBtn}</a>
                       : <button className="bg-gray-800 text-gray-600 font-bold px-4 py-2 rounded-lg text-sm cursor-not-allowed whitespace-nowrap">{s.soldOut}</button>}
                   </div>
                 </div>
