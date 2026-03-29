@@ -1,20 +1,27 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useLanguage } from '@/contexts/LanguageContext'
 
-export default function SignupPage() {
+function SignupContent() {
   const { t } = useLanguage()
   const a = t.auth
   const router = useRouter()
+  const params = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+
+  useEffect(() => {
+    // Persist referral code from URL to localStorage so it survives email confirmation
+    const ref = params.get('ref')
+    if (ref) localStorage.setItem('vf_ref', ref.toUpperCase())
+  }, [params])
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
@@ -99,5 +106,13 @@ export default function SignupPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div />}>
+      <SignupContent />
+    </Suspense>
   )
 }
