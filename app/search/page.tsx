@@ -3,6 +3,22 @@ import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { AIRPORTS, getMockFlights, Flight } from '@/lib/mockData'
 
+const US_AIRPORTS = AIRPORTS.filter(a => a.country === 'US')
+const MX_AIRPORTS = AIRPORTS.filter(a => a.country === 'MX')
+
+function AirportSelect({ value, onChange, className }: { value: string; onChange: (v: string) => void; className: string }) {
+  return (
+    <select value={value} onChange={e => onChange(e.target.value)} className={className}>
+      <optgroup label="🇺🇸 USA">
+        {US_AIRPORTS.map(a => <option key={a.code} value={a.code}>{a.code} — {a.name}</option>)}
+      </optgroup>
+      <optgroup label="🇲🇽 Mexico">
+        {MX_AIRPORTS.map(a => <option key={a.code} value={a.code}>{a.code} — {a.name}</option>)}
+      </optgroup>
+    </select>
+  )
+}
+
 function SearchContent() {
   const params = useSearchParams()
   const [origin, setOrigin] = useState(params.get('origin') || 'OAK')
@@ -29,6 +45,8 @@ function SearchContent() {
   }
 
   const isInternational = AIRPORTS.find(a => a.code === origin)?.country === 'MX' || AIRPORTS.find(a => a.code === destination)?.country === 'MX'
+  const originName = AIRPORTS.find(a => a.code === origin)?.name || origin
+  const destName = AIRPORTS.find(a => a.code === destination)?.name || destination
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
@@ -43,19 +61,11 @@ function SearchContent() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
           <div className="flex flex-col gap-1 md:col-span-2">
             <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">From</label>
-            <select
-              value={origin}
-              onChange={e => setOrigin(e.target.value)}
-              className="bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
-            >
-              {AIRPORTS.map(a => (
-                <option key={a.code} value={a.code}>{a.code} — {a.name}</option>
-              ))}
-            </select>
+            <AirportSelect value={origin} onChange={setOrigin} className="bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500" />
           </div>
 
           <div className="flex justify-center">
-            <button type="button" onClick={swap} className="bg-gray-800 border border-white/10 rounded-lg p-2.5 hover:bg-gray-700 transition-colors">
+            <button type="button" onClick={swap} className="bg-gray-800 border border-white/10 rounded-lg p-2.5 hover:bg-gray-700 transition-colors" title="Swap airports">
               <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
               </svg>
@@ -64,15 +74,7 @@ function SearchContent() {
 
           <div className="flex flex-col gap-1 md:col-span-2">
             <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">To</label>
-            <select
-              value={destination}
-              onChange={e => setDestination(e.target.value)}
-              className="bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
-            >
-              {AIRPORTS.map(a => (
-                <option key={a.code} value={a.code}>{a.code} — {a.name}</option>
-              ))}
-            </select>
+            <AirportSelect value={destination} onChange={setDestination} className="bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500" />
           </div>
 
           <div className="flex flex-col gap-1 md:col-span-2">
@@ -101,6 +103,21 @@ function SearchContent() {
         </div>
       </form>
 
+      {/* Empty state — before any search */}
+      {!searched && !loading && (
+        <div className="text-center py-16">
+          <p className="text-5xl mb-4">✈️</p>
+          <p className="text-white font-semibold mb-2">Ready to search</p>
+          <p className="text-gray-500 text-sm">Select your airports and date, then hit Search.</p>
+          <div className="mt-8 inline-flex items-center gap-2 bg-gray-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-400">
+            <span className="text-yellow-400">💡</span>
+            {isInternational
+              ? 'Tip: International pass seats open 3 days before departure — search close to your travel date.'
+              : 'Tip: Domestic pass seats open 24 hours before departure — search the day before you fly.'}
+          </div>
+        </div>
+      )}
+
       {/* Alert Banner */}
       {searched && !loading && (
         <div className="bg-green-950 border border-green-800/50 rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start gap-3">
@@ -108,7 +125,7 @@ function SearchContent() {
             <span className="text-green-400 mt-0.5">🔔</span>
             <div>
               <p className="text-green-300 font-medium text-sm">Want instant alerts for this route?</p>
-              <p className="text-green-600 text-xs mt-0.5">Upgrade to Pro and get notified the second seats drop on {origin} → {destination}.</p>
+              <p className="text-green-600 text-xs mt-0.5">Upgrade to Pro and get notified the second seats drop on {originName} → {destName}.</p>
             </div>
           </div>
           <button className="w-full sm:w-auto bg-green-500 hover:bg-green-400 text-black text-xs font-bold px-3 py-2 rounded-lg transition-colors">
@@ -133,6 +150,16 @@ function SearchContent() {
       {/* Results */}
       {!loading && flights && (
         <div>
+          {/* Booking window tip */}
+          <div className="bg-gray-900 border border-white/10 rounded-xl px-4 py-3 mb-4 flex items-center gap-2 text-sm">
+            <span className="text-yellow-400">⏰</span>
+            <p className="text-gray-400">
+              {isInternational
+                ? <><span className="text-white font-medium">International route:</span> Pass seats open <span className="text-green-400">3 days before</span> departure.</>
+                : <><span className="text-white font-medium">Domestic route:</span> Pass seats open <span className="text-green-400">24 hours before</span> departure.</>}
+            </p>
+          </div>
+
           <div className="flex items-center justify-between mb-4">
             <p className="text-gray-300 text-sm">
               <span className="font-semibold text-white">{flights.filter(f => f.available).length}</span> flights available
