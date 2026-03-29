@@ -11,8 +11,8 @@ export const translations = {
     },
     home: {
       badge: 'Checando 70+ rutas de Volaris en tiempo real',
-      h1a: 'Encuentra tu vuelo del',
-      h1b: 'Pase Volaris antes que nadie',
+      h1a: 'Encuentra tu vuelo del Pase Volaris',
+      h1b: 'antes que nadie',
       subtitle: '¿Ya te aburriste de estar checando Volaris todo el día? VolarFácil lo checa por ti 24/7 y te manda aviso de volada cuando caen asientos.',
       ctaSearch: 'Buscar vuelos gratis →',
       ctaPricing: 'Ver precios',
@@ -71,6 +71,9 @@ export const translations = {
       withPass: 'MXN · con tu pase',
       bookBtn: 'Reservar →',
       nonstop: 'Sin escala',
+      loading: 'Buscando disponibilidad...',
+      seatSingular: 'lugar disponible',
+      seatPlural: 'lugares disponibles',
       demo: 'Modo demo — los datos son simulados. Para ver disponibilidad real necesitas un pase anual Volaris.',
     },
     calendar: {
@@ -119,6 +122,13 @@ export const translations = {
       usaGroup: '🇺🇸 Estados Unidos',
       mxGroup: '🇲🇽 México',
     },
+    footer: {
+      tagline: '— No somos parte de Volaris',
+      pricing: 'Precios',
+      search: 'Buscar',
+      terms: 'Términos',
+      privacy: 'Privacidad',
+    },
   },
   en: {
     nav: {
@@ -130,8 +140,8 @@ export const translations = {
     },
     home: {
       badge: 'Now tracking 70+ Volaris routes in real time',
-      h1a: 'Find your Volaris Pass',
-      h1b: 'flights instantly',
+      h1a: 'Find Volaris Pass flights',
+      h1b: 'before anyone else',
       subtitle: 'Stop refreshing Volaris manually. VolarFácil monitors annual pass availability 24/7 and alerts you the second seats drop.',
       ctaSearch: 'Search flights free →',
       ctaPricing: 'View pricing',
@@ -190,6 +200,9 @@ export const translations = {
       withPass: 'MXN · with pass',
       bookBtn: 'Book →',
       nonstop: 'Nonstop',
+      loading: 'Checking Volaris pass availability...',
+      seatSingular: 'seat left',
+      seatPlural: 'seats left',
       demo: 'Demo mode — showing mock data. Real availability requires a Volaris annual pass.',
     },
     calendar: {
@@ -237,6 +250,13 @@ export const translations = {
     common: {
       usaGroup: '🇺🇸 USA',
       mxGroup: '🇲🇽 Mexico',
+    },
+    footer: {
+      tagline: '— Not affiliated with Volaris',
+      pricing: 'Pricing',
+      search: 'Search',
+      terms: 'Terms',
+      privacy: 'Privacy',
     },
   },
 }
