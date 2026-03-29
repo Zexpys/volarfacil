@@ -131,7 +131,7 @@ export default function CalendarPage() {
               className={`aspect-square flex flex-col items-center justify-center rounded-lg text-sm font-medium transition-colors ${statusColor(status)}`}
             >
               <span>{day}</span>
-              {status === 1 && <span className="text-[9px] mt-0.5 text-yellow-500">{lang === 'es' ? 'poc' : 'low'}</span>}
+              {status === 1 && <span className="text-[9px] mt-0.5 text-yellow-500">{lang === 'es' ? 'lim' : 'low'}</span>}
               {status >= 2 && <span className="text-[9px] mt-0.5 text-green-500">✓</span>}
             </div>
           ))}
