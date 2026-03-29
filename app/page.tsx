@@ -59,8 +59,8 @@ export default function Home() {
               <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Date</label>
               <input type="date" className="bg-gray-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500" />
             </div>
-            <Link href="/search" className="flex items-center justify-center bg-green-500 hover:bg-green-400 text-black font-bold rounded-lg transition-colors mt-5 py-2.5">
-              Search
+            <Link href="/search" className="flex items-center justify-center bg-green-500 hover:bg-green-400 text-black font-bold rounded-lg transition-colors md:mt-5 py-3 md:py-2.5">
+              Search flights →
             </Link>
           </div>
         </div>
@@ -122,45 +122,6 @@ export default function Home() {
               <p className="text-gray-400 text-sm leading-relaxed">{f.desc}</p>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* vs Competitor */}
-      <section className="max-w-4xl mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold text-center mb-12">Better than the competition</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left py-3 px-4 text-gray-400 font-medium">Feature</th>
-                <th className="py-3 px-4 text-center">
-                  <span className="text-white font-bold">VolarFácil</span>
-                  <span className="block text-green-400 text-xs">Free / $7 / $15</span>
-                </th>
-                <th className="py-3 px-4 text-center text-gray-500">
-                  pavolaris.com
-                  <span className="block text-xs">$3.95/day</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {[
-                ['Flight search', '✅ Free', '💳 Paid only'],
-                ['Seat alerts', '✅ $7/mo', '❌ No'],
-                ['Auto-booking', '✅ $15/mo', '❌ No'],
-                ['Fare calendar', '✅ $7/mo', '✅ Paid'],
-                ['Route optimizer', '✅ $7/mo', '✅ Paid'],
-                ['All-in pricing', '✅ Free', '❌ No'],
-                ['Mobile friendly', '✅ Yes', '⚠️ Basic'],
-              ].map(([feature, us, them]) => (
-                <tr key={feature} className="hover:bg-white/2">
-                  <td className="py-3 px-4 text-gray-300">{feature}</td>
-                  <td className="py-3 px-4 text-center font-medium">{us}</td>
-                  <td className="py-3 px-4 text-center text-gray-500">{them}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </section>
 
