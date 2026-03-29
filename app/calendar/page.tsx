@@ -1,11 +1,15 @@
 'use client'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { AIRPORTS, getCalendarData } from '@/lib/mockData'
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+const US_AIRPORTS = AIRPORTS.filter(a => a.country === 'US')
+const MX_AIRPORTS = AIRPORTS.filter(a => a.country === 'MX')
 
 export default function CalendarPage() {
+  const router = useRouter()
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
@@ -26,6 +30,12 @@ export default function CalendarPage() {
     else setMonth(m => m + 1)
   }
 
+  function handleDayClick(day: number, status: number) {
+    if (status === 0) return
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    router.push(`/search?origin=${origin}&destination=${destination}&date=${dateStr}`)
+  }
+
   const statusColor = (s: number) => {
     if (s === 0) return 'bg-gray-800/50 text-gray-600 cursor-default'
     if (s === 1) return 'bg-yellow-950/80 text-yellow-400 border border-yellow-800/30 hover:border-yellow-600/50 cursor-pointer'
@@ -33,26 +43,36 @@ export default function CalendarPage() {
     return 'bg-green-900/40 text-green-300 border border-green-700/40 hover:border-green-500/60 cursor-pointer'
   }
 
+  const selectClass = "bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
       <h1 className="text-3xl font-bold mb-2">Fare Calendar</h1>
-      <p className="text-gray-400 mb-8 text-sm">See all available days at a glance. No more guessing.</p>
+      <p className="text-gray-400 mb-8 text-sm">See all available days at a glance. Tap a day to search flights.</p>
 
       {/* Controls */}
       <div className="bg-gray-900 border border-white/10 rounded-2xl p-5 mb-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">From</label>
-            <select value={origin} onChange={e => setOrigin(e.target.value)}
-              className="bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500">
-              {AIRPORTS.map(a => <option key={a.code} value={a.code}>{a.code} — {a.name}</option>)}
+            <select value={origin} onChange={e => setOrigin(e.target.value)} className={selectClass}>
+              <optgroup label="🇺🇸 USA">
+                {US_AIRPORTS.map(a => <option key={a.code} value={a.code}>{a.code} — {a.name}</option>)}
+              </optgroup>
+              <optgroup label="🇲🇽 Mexico">
+                {MX_AIRPORTS.map(a => <option key={a.code} value={a.code}>{a.code} — {a.name}</option>)}
+              </optgroup>
             </select>
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs text-gray-500 uppercase tracking-wide font-medium">To</label>
-            <select value={destination} onChange={e => setDestination(e.target.value)}
-              className="bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500">
-              {AIRPORTS.map(a => <option key={a.code} value={a.code}>{a.code} — {a.name}</option>)}
+            <select value={destination} onChange={e => setDestination(e.target.value)} className={selectClass}>
+              <optgroup label="🇺🇸 USA">
+                {US_AIRPORTS.map(a => <option key={a.code} value={a.code}>{a.code} — {a.name}</option>)}
+              </optgroup>
+              <optgroup label="🇲🇽 Mexico">
+                {MX_AIRPORTS.map(a => <option key={a.code} value={a.code}>{a.code} — {a.name}</option>)}
+              </optgroup>
             </select>
           </div>
           <div className="col-span-2 flex items-end">
@@ -106,7 +126,11 @@ export default function CalendarPage() {
             <div key={`e-${i}`} />
           ))}
           {calData.map(({ day, status }) => (
-            <div key={day} className={`aspect-square flex flex-col items-center justify-center rounded-lg text-sm font-medium transition-colors ${statusColor(status)}`}>
+            <div
+              key={day}
+              onClick={() => handleDayClick(day, status)}
+              className={`aspect-square flex flex-col items-center justify-center rounded-lg text-sm font-medium transition-colors ${statusColor(status)}`}
+            >
               <span>{day}</span>
               {status === 1 && <span className="text-[9px] mt-0.5 text-yellow-500">low</span>}
               {status >= 2 && <span className="text-[9px] mt-0.5 text-green-500">✓</span>}
@@ -128,6 +152,7 @@ export default function CalendarPage() {
             </div>
           ))}
         </div>
+        <p className="text-center text-gray-600 text-xs mt-4">Tap any available day to search flights for that date</p>
       </div>
 
       <p className="text-center text-gray-600 text-xs mt-6">
