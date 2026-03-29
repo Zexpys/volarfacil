@@ -28,7 +28,7 @@ function SearchContent() {
     setDestination(origin)
   }
 
-  const isInternational = ['MLM', 'GDL', 'MEX', 'CUN', 'MTY'].includes(destination) || ['MLM', 'GDL', 'MEX', 'CUN', 'MTY'].includes(origin)
+  const isInternational = AIRPORTS.find(a => a.code === origin)?.country === 'MX' || AIRPORTS.find(a => a.code === destination)?.country === 'MX'
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
