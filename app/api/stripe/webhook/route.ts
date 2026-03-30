@@ -6,13 +6,20 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
+  // Validate webhook secret is configured
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+  if (!webhookSecret) {
+    console.error('STRIPE_WEBHOOK_SECRET not configured')
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
+  }
+
   const body = await request.text()
   const sig = request.headers.get('stripe-signature')
   if (!sig) return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
 
   let event: Stripe.Event
   try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
   } catch (err: any) {
     console.error('Webhook signature failed:', err.message)
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
@@ -44,6 +51,9 @@ export async function POST(request: NextRequest) {
     }
   } catch (err) {
     console.error(`Webhook handler error (${event.type}):`, err)
+    // Return 500 so Stripe retries — only for non-idempotent operations
+    // For idempotent handlers this is safe; we guard against double-processing inside each handler
+    return NextResponse.json({ error: 'Handler failed' }, { status: 500 })
   }
 
   return NextResponse.json({ received: true })
@@ -73,6 +83,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   if (introOffer === 'referral' && referrerId) {
     const { data: profile } = await supabaseAdmin
       .from('profiles').select('email').eq('id', userId).single()
+    // upsert with onConflict to handle duplicate webhook delivery
     await supabaseAdmin.from('referrals').upsert({
       referrer_id: referrerId,
       referee_id: userId,
@@ -96,18 +107,28 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     updated_at: new Date().toISOString(),
   }).eq('stripe_subscription_id', subscriptionId)
 
-  // Issue referral reward only on first successful payment
+  // Only issue referral reward on the first successful payment
   if (invoice.billing_reason !== 'subscription_create') return
 
   const userId = sub.metadata?.user_id
   if (!userId) return
 
   const { data: referral } = await supabaseAdmin
-    .from('referrals').select('id, referrer_id, status')
+    .from('referrals').select('id, referrer_id, status, reward_issued_at')
     .eq('referee_id', userId).eq('status', 'converted').maybeSingle()
+
   if (!referral?.referrer_id) return
 
-  // Check credit cap
+  // IDEMPOTENCY: bail out if reward was already issued (handles duplicate webhook delivery)
+  if (referral.reward_issued_at) return
+
+  // Check for existing credit record (secondary idempotency check)
+  const { data: existingCredit } = await supabaseAdmin
+    .from('credits').select('id').eq('referral_id', referral.id)
+    .eq('reason', 'referral_reward').maybeSingle()
+  if (existingCredit) return
+
+  // Check credit cap ($30 max)
   const { data: creditRows } = await supabaseAdmin
     .from('credits').select('amount_cents').eq('user_id', referral.referrer_id)
   const balance = (creditRows ?? []).reduce((sum: number, r: any) => sum + r.amount_cents, 0)
@@ -117,18 +138,25 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     .from('profiles').select('stripe_customer_id').eq('id', referral.referrer_id).single()
   if (!referrerProfile?.stripe_customer_id) return
 
-  // Add $10 to referrer's Stripe balance (negative = credit)
-  const balanceTxn = await stripe.customers.createBalanceTransaction(
-    referrerProfile.stripe_customer_id,
-    { amount: -REFERRAL_REWARD_CENTS, currency: 'usd', description: 'Referral reward' }
-  )
+  // Apply $10 credit to referrer's Stripe balance — wrap separately so DB record is only created if Stripe succeeds
+  let txnId: string
+  try {
+    const balanceTxn = await stripe.customers.createBalanceTransaction(
+      referrerProfile.stripe_customer_id,
+      { amount: -REFERRAL_REWARD_CENTS, currency: 'usd', description: 'Referral reward — friend subscribed' }
+    )
+    txnId = balanceTxn.id
+  } catch (txnErr) {
+    console.error('Failed to create Stripe balance transaction:', txnErr)
+    return // Do not record credit if Stripe failed
+  }
 
   await supabaseAdmin.from('credits').insert({
     user_id: referral.referrer_id,
     amount_cents: REFERRAL_REWARD_CENTS,
     reason: 'referral_reward',
     referral_id: referral.id,
-    stripe_balance_txn_id: balanceTxn.id,
+    stripe_balance_txn_id: txnId,
   })
 
   await supabaseAdmin.from('referrals').update({
@@ -140,6 +168,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
   const subscriptionId = invoice.subscription as string
   if (!subscriptionId) return
+
   await supabaseAdmin.from('subscriptions').update({
     status: 'past_due', updated_at: new Date().toISOString(),
   }).eq('stripe_subscription_id', subscriptionId)
@@ -171,25 +200,55 @@ async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
   }).eq('stripe_subscription_id', sub.id)
 }
 
-async function handleDispute(dispute: Stripe.Dispute) {
-  const charge = await stripe.charges.retrieve(dispute.charge as string)
-  const customerId = charge.customer as string
-  if (!customerId) return
+// Shared helper: void referral and reverse any issued credit
+async function voidReferral(customerId: string, reason: string) {
   const { data: profile } = await supabaseAdmin
     .from('profiles').select('id').eq('stripe_customer_id', customerId).maybeSingle()
   if (!profile) return
-  await supabaseAdmin.from('referrals').update({
-    status: 'voided', voided_reason: 'dispute',
-  }).eq('referee_id', profile.id).eq('status', 'converted')
+
+  const { data: referral } = await supabaseAdmin
+    .from('referrals').select('id, referrer_id, status, reward_issued_at')
+    .eq('referee_id', profile.id).maybeSingle()
+  if (!referral) return
+
+  // If reward was already issued, reverse the credit
+  if (referral.reward_issued_at && referral.referrer_id) {
+    const { data: referrerProfile } = await supabaseAdmin
+      .from('profiles').select('stripe_customer_id').eq('id', referral.referrer_id).single()
+
+    if (referrerProfile?.stripe_customer_id) {
+      try {
+        // Reverse the Stripe customer balance credit
+        await stripe.customers.createBalanceTransaction(
+          referrerProfile.stripe_customer_id,
+          { amount: REFERRAL_REWARD_CENTS, currency: 'usd', description: `Referral credit reversed — ${reason}` }
+        )
+        // Record reversal in ledger
+        await supabaseAdmin.from('credits').insert({
+          user_id: referral.referrer_id,
+          amount_cents: -REFERRAL_REWARD_CENTS,
+          reason: 'referral_reward_reversal',
+          referral_id: referral.id,
+        })
+      } catch (err) {
+        console.error('Failed to reverse referral credit:', err)
+      }
+    }
+  }
+
+  // Void the referral if it's still in a voidable state
+  if (['pending', 'converted', 'rewarded'].includes(referral.status)) {
+    await supabaseAdmin.from('referrals').update({
+      status: 'voided', voided_reason: reason,
+    }).eq('id', referral.id)
+  }
+}
+
+async function handleDispute(dispute: Stripe.Dispute) {
+  const charge = await stripe.charges.retrieve(dispute.charge as string)
+  if (charge.customer) await voidReferral(charge.customer as string, 'dispute')
 }
 
 async function handleRefund(charge: Stripe.Charge) {
-  const customerId = charge.customer as string
-  if (!customerId) return
-  const { data: profile } = await supabaseAdmin
-    .from('profiles').select('id').eq('stripe_customer_id', customerId).maybeSingle()
-  if (!profile) return
-  await supabaseAdmin.from('referrals').update({
-    status: 'voided', voided_reason: 'refund',
-  }).eq('referee_id', profile.id).eq('status', 'converted')
+  if (charge.customer) await voidReferral(charge.customer as string, 'refund')
 }
