@@ -1,9 +1,9 @@
 -- ============================================================
 -- VolarFácil — Subscription & Referral Schema
 -- Run this in: Supabase Dashboard → SQL Editor → Run
+-- Safe to re-run (uses IF NOT EXISTS and OR REPLACE)
 -- ============================================================
 
--- Profiles (one per auth user, created automatically via trigger)
 create table if not exists profiles (
   id uuid references auth.users on delete cascade primary key,
   email text not null,
@@ -12,43 +12,37 @@ create table if not exists profiles (
   created_at timestamptz default now()
 );
 
--- Subscriptions (mirrors Stripe subscription state)
 create table if not exists subscriptions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references profiles on delete cascade not null,
   stripe_subscription_id text unique,
   stripe_customer_id text,
   status text not null default 'none',
-  -- status: 'trialing' | 'active' | 'canceled' | 'past_due' | 'incomplete' | 'none'
   trial_end timestamptz,
   current_period_end timestamptz,
   cancel_at_period_end boolean default false,
-  intro_offer text, -- 'trial' | 'referral' | null
+  intro_offer text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
 
--- Referrals (tracks who referred who)
 create table if not exists referrals (
   id uuid primary key default gen_random_uuid(),
   referrer_id uuid references profiles on delete set null,
   referee_id uuid references profiles on delete cascade not null unique,
-  -- unique(referee_id): one referral record per user — no retroactive re-assignment
   referee_email text not null,
   status text not null default 'pending',
-  -- status: 'pending' | 'converted' | 'rewarded' | 'voided'
   stripe_discount_applied boolean default false,
   reward_issued_at timestamptz,
-  voided_reason text, -- 'refund' | 'dispute' | 'fraud' | 'failed_first_payment' | 'self_referral'
+  voided_reason text,
   created_at timestamptz default now()
 );
 
--- Credits (ledger of referral credits)
 create table if not exists credits (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references profiles on delete cascade not null,
-  amount_cents integer not null, -- negative = credit applied to invoice
-  reason text not null,          -- 'referral_reward' | 'applied_to_invoice'
+  amount_cents integer not null,
+  reason text not null,
   referral_id uuid references referrals on delete set null,
   stripe_invoice_id text,
   stripe_balance_txn_id text,
@@ -61,20 +55,23 @@ alter table subscriptions enable row level security;
 alter table referrals enable row level security;
 alter table credits enable row level security;
 
--- Users can only read/update their own profile
-create policy "profiles: own row" on profiles
-  for all using (auth.uid() = id);
+-- Profiles: users can read their own row but cannot update sensitive fields
+-- (stripe_customer_id and referral_code are managed server-side only)
+drop policy if exists "profiles: own row" on profiles;
+create policy "profiles: select own" on profiles
+  for select using (auth.uid() = id);
 
--- Users can only read their own subscription
-create policy "subscriptions: own row" on subscriptions
+-- Subscriptions, referrals, credits: read-only for users (writes happen via service role in webhooks)
+drop policy if exists "subscriptions: own row" on subscriptions;
+create policy "subscriptions: select own" on subscriptions
   for select using (auth.uid() = user_id);
 
--- Users can read referrals where they are referrer or referee
-create policy "referrals: own rows" on referrals
+drop policy if exists "referrals: own rows" on referrals;
+create policy "referrals: select own" on referrals
   for select using (auth.uid() = referrer_id or auth.uid() = referee_id);
 
--- Users can only read their own credits
-create policy "credits: own row" on credits
+drop policy if exists "credits: own row" on credits;
+create policy "credits: select own" on credits
   for select using (auth.uid() = user_id);
 
 -- ─── Trigger: auto-create profile on signup ───────────────────────────────────
@@ -83,9 +80,14 @@ returns trigger language plpgsql security definer set search_path = public as $$
 declare
   new_code text;
   code_taken boolean;
+  attempts integer := 0;
 begin
-  -- Generate unique 8-char alphanumeric referral code
+  -- Generate unique 8-char alphanumeric referral code (max 100 attempts)
   loop
+    attempts := attempts + 1;
+    if attempts > 100 then
+      raise exception 'Could not generate unique referral code after 100 attempts';
+    end if;
     new_code := upper(substring(replace(gen_random_uuid()::text, '-', '') from 1 for 8));
     select exists(select 1 from profiles where referral_code = new_code) into code_taken;
     exit when not code_taken;
@@ -99,7 +101,6 @@ begin
 end;
 $$;
 
--- Drop and recreate trigger (safe to re-run)
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
