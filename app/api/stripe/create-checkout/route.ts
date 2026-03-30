@@ -4,14 +4,21 @@ import { stripe, STRIPE_PRICE_PRO, STRIPE_COUPON_REFERRAL_50, TRIAL_DAYS } from 
 import { supabaseAdmin, getUserFromToken } from '@/lib/supabase-admin'
 
 export async function POST(request: NextRequest) {
+  // Auth
   const token = request.headers.get('authorization')?.split(' ')[1]
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const user = await getUserFromToken(token)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { introOffer, refCode } = await request.json() as {
-    introOffer: 'trial' | 'referral'
-    refCode?: string
+  const body = await request.json()
+  const { introOffer, refCode } = body
+
+  // Runtime validation — TypeScript types are not enforced at runtime
+  if (!['trial', 'referral'].includes(introOffer)) {
+    return NextResponse.json({ error: 'Invalid intro offer' }, { status: 400 })
+  }
+  if (refCode !== undefined && (typeof refCode !== 'string' || refCode.length > 20 || !/^[A-Za-z0-9]+$/.test(refCode))) {
+    return NextResponse.json({ error: 'Invalid referral code' }, { status: 400 })
   }
 
   // Block if already subscribed
@@ -33,22 +40,32 @@ export async function POST(request: NextRequest) {
     await supabaseAdmin.from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id)
   }
 
-  // Validate referral — prevent self-referral & invalid codes
-  let finalOffer = introOffer
+  // Validate referral — prevent self-referral, invalid codes, and already-referred users
+  let finalOffer: 'trial' | 'referral' = introOffer
   let referrerId: string | null = null
   let validatedRefCode: string | null = null
 
   if (introOffer === 'referral' && refCode) {
-    if (refCode === profile?.referral_code) {
-      finalOffer = 'trial' // self-referral: fall back silently
+    const normalizedCode = refCode.toUpperCase()
+
+    // Self-referral check
+    if (normalizedCode === profile?.referral_code) {
+      finalOffer = 'trial'
     } else {
-      const { data: referrer } = await supabaseAdmin
-        .from('profiles').select('id').eq('referral_code', refCode.toUpperCase()).maybeSingle()
-      if (referrer) {
-        referrerId = referrer.id
-        validatedRefCode = refCode.toUpperCase()
+      // Check if user was already referred
+      const { data: alreadyReferred } = await supabaseAdmin
+        .from('referrals').select('id').eq('referee_id', user.id).maybeSingle()
+      if (alreadyReferred) {
+        finalOffer = 'trial' // already has a referral, fall back
       } else {
-        finalOffer = 'trial' // invalid code
+        const { data: referrer } = await supabaseAdmin
+          .from('profiles').select('id').eq('referral_code', normalizedCode).maybeSingle()
+        if (referrer) {
+          referrerId = referrer.id
+          validatedRefCode = normalizedCode
+        } else {
+          finalOffer = 'trial' // invalid code
+        }
       }
     }
   }
@@ -61,13 +78,17 @@ export async function POST(request: NextRequest) {
     success_url: `${siteUrl}/account?checkout=success`,
     cancel_url: `${siteUrl}/pricing`,
     metadata: {
-      user_id: user.id, intro_offer: finalOffer,
-      referrer_id: referrerId ?? '', ref_code: validatedRefCode ?? '',
+      user_id: user.id,
+      intro_offer: finalOffer,
+      referrer_id: referrerId ?? '',
+      ref_code: validatedRefCode ?? '',
     },
     subscription_data: {
       metadata: {
-        user_id: user.id, intro_offer: finalOffer,
-        referrer_id: referrerId ?? '', ref_code: validatedRefCode ?? '',
+        user_id: user.id,
+        intro_offer: finalOffer,
+        referrer_id: referrerId ?? '',
+        ref_code: validatedRefCode ?? '',
       },
     },
   }
