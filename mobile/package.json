@@ -7,7 +7,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "postinstall": "node -e \"const fs=require('fs');const p=require.resolve('metro/package.json');const pkg=JSON.parse(fs.readFileSync(p,'utf8'));if(pkg.exports&&!pkg.exports['./src/lib/TerminalReporter']){pkg.exports['./src/lib/TerminalReporter']='./src/lib/TerminalReporter.js';fs.writeFileSync(p,JSON.stringify(pkg));console.log('Patched metro exports')}\""
+    "postinstall": "node -e \"const fs=require('fs');const pkgs=['metro','metro-cache','metro-config','metro-core','metro-file-map','metro-resolver','metro-runtime','metro-source-map','metro-transform-worker','metro-babel-transformer'];let n=0;for(const pkg of pkgs){try{const p=require.resolve(pkg+'/package.json');const j=JSON.parse(fs.readFileSync(p,'utf8'));if(j.exports&&!j.exports['./src/*']){j.exports['./src/*']='./src/*.js';fs.writeFileSync(p,JSON.stringify(j));n++;console.log('Patched '+pkg)}}catch(e){}}console.log('Done: '+n+' packages patched')\""
   },
   "dependencies": {
     "expo": "~52.0.36",
