@@ -31,9 +31,36 @@ function ensureObject(value) {
   return value && typeof value === 'object' ? value : {};
 }
 
-const metroPackageJsonPath = require.resolve('metro/package.json');
-patchPackageJson(
-  metroPackageJsonPath,
+function resolveOptional(modulePath, label) {
+  try {
+    return require.resolve(modulePath);
+  } catch (error) {
+    if (error && error.code === 'MODULE_NOT_FOUND') {
+      console.log(`Skipping ${label}; ${modulePath} is not installed`);
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+function patchPackageJsonIfPresent(modulePath, mutate, label) {
+  const resolvedPackageJsonPath = resolveOptional(modulePath, label);
+  if (!resolvedPackageJsonPath) return;
+  patchPackageJson(resolvedPackageJsonPath, mutate, label);
+}
+
+function patchTextFileIfPresent(filePath, transform, label) {
+  if (!fs.existsSync(filePath)) {
+    console.log(`Skipping ${label}; file not found`);
+    return;
+  }
+
+  patchTextFile(filePath, transform, label);
+}
+
+patchPackageJsonIfPresent(
+  'metro/package.json',
   pkg => {
     pkg.exports = ensureObject(pkg.exports);
     let changed = false;
@@ -53,9 +80,8 @@ patchPackageJson(
   'metro exports'
 );
 
-const metroCachePackageJsonPath = require.resolve('metro-cache/package.json');
-patchPackageJson(
-  metroCachePackageJsonPath,
+patchPackageJsonIfPresent(
+  'metro-cache/package.json',
   pkg => {
     pkg.exports = ensureObject(pkg.exports);
     let changed = false;
@@ -75,9 +101,8 @@ patchPackageJson(
   'metro-cache exports'
 );
 
-const metroTransformWorkerPackageJsonPath = require.resolve('metro-transform-worker/package.json');
-patchPackageJson(
-  metroTransformWorkerPackageJsonPath,
+patchPackageJsonIfPresent(
+  'metro-transform-worker/package.json',
   pkg => {
     pkg.exports = ensureObject(pkg.exports);
     if (pkg.exports['./src/*']) return false;
@@ -87,7 +112,8 @@ patchPackageJson(
   'metro-transform-worker exports'
 );
 
-const expoMetroConfigRoot = path.dirname(require.resolve('@expo/metro-config/package.json'));
+const expoMetroConfigPackageJsonPath = resolveOptional('@expo/metro-config/package.json', '@expo/metro-config');
+const expoMetroConfigRoot = expoMetroConfigPackageJsonPath ? path.dirname(expoMetroConfigPackageJsonPath) : null;
 const sourceMapPatchFrom = [
   "const sourceMapString = typeof sourceMapString_1.default !== 'function'",
   '    ? sourceMapString_1.default.sourceMapString',
@@ -100,29 +126,34 @@ const sourceMapPatchTo = [
   '    : sourceMapModule.sourceMapString;',
 ].join('\n');
 
-patchTextFile(
-  path.join(expoMetroConfigRoot, 'build', 'serializer', 'serializeChunks.js'),
-  source => source.replace(sourceMapPatchFrom, sourceMapPatchTo),
-  '@expo/metro-config serializeChunks'
-);
+if (expoMetroConfigRoot) {
+  patchTextFileIfPresent(
+    path.join(expoMetroConfigRoot, 'build', 'serializer', 'serializeChunks.js'),
+    source => source.replace(sourceMapPatchFrom, sourceMapPatchTo),
+    '@expo/metro-config serializeChunks'
+  );
 
-patchTextFile(
-  path.join(expoMetroConfigRoot, 'build', 'serializer', 'withExpoSerializers.js'),
-  source => source.replace(sourceMapPatchFrom, sourceMapPatchTo),
-  '@expo/metro-config withExpoSerializers'
-);
+  patchTextFileIfPresent(
+    path.join(expoMetroConfigRoot, 'build', 'serializer', 'withExpoSerializers.js'),
+    source => source.replace(sourceMapPatchFrom, sourceMapPatchTo),
+    '@expo/metro-config withExpoSerializers'
+  );
+}
 
-const expoCliRoot = path.dirname(require.resolve('@expo/cli/package.json'));
-patchTextFile(
-  path.join(expoCliRoot, 'build', 'src', 'start', 'server', 'metro', 'instantiateMetro.js'),
-  source => source
-    .replace(
-      'this._logLines.push(// format args like console.log',
-      '(this._logLines ??= []).push(// format args like console.log'
-    )
-    .replace(
-      'this._scheduleUpdate();',
-      "if (typeof this._scheduleUpdate === 'function') this._scheduleUpdate();"
-    ),
-  '@expo/cli instantiateMetro'
-);
+const expoCliPackageJsonPath = resolveOptional('@expo/cli/package.json', '@expo/cli');
+if (expoCliPackageJsonPath) {
+  const expoCliRoot = path.dirname(expoCliPackageJsonPath);
+  patchTextFileIfPresent(
+    path.join(expoCliRoot, 'build', 'src', 'start', 'server', 'metro', 'instantiateMetro.js'),
+    source => source
+      .replace(
+        'this._logLines.push(// format args like console.log',
+        '(this._logLines ??= []).push(// format args like console.log'
+      )
+      .replace(
+        'this._scheduleUpdate();',
+        "if (typeof this._scheduleUpdate === 'function') this._scheduleUpdate();"
+      ),
+    '@expo/cli instantiateMetro'
+  );
+}
