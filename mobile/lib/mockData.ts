@@ -12,55 +12,109 @@ export interface Flight {
   available: boolean;
 }
 
+// Mirrors the current production web demo until a live search API exists.
 function seededRandom(seed: number): number {
   const x = Math.sin(seed) * 10000;
   return x - Math.floor(x);
 }
 
+const MEXICO_AIRPORTS = new Set([
+  'MEX', 'GDL', 'MTY', 'CUN', 'TIJ', 'MLM', 'BJX', 'MZT', 'PVR', 'SJD',
+  'AGU', 'CUL', 'HMO', 'MID', 'OAX', 'SLP', 'VER', 'ZIH', 'ZCL', 'MXL',
+  'TAM', 'VSA', 'LMM', 'ZLO', 'TGZ',
+]);
+
 export function getMockFlights(origin: string, destination: string, date: string): Flight[] {
-  const isMX = destination.match(/MEX|GDL|MTY|CUN|PVR|SJD|MOR|BJX|ZIH|MZT|TIJ|AGU|CUL|HMO|OAX|MID/);
-  const seed = (origin + destination + date).split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  void date;
 
-  const times = ['06:00', '09:30', '13:15', '18:45'];
-  const durations = isMX ? ['4h 30m', '5h 00m', '5h 30m', '4h 45m'] : ['1h 30m', '2h 00m', '1h 45m', '2h 15m'];
+  const touchesMexico = MEXICO_AIRPORTS.has(origin) || MEXICO_AIRPORTS.has(destination);
+  const seed = origin.charCodeAt(0) + destination.charCodeAt(0);
 
-  return times.map((dep, i) => {
-    const r = seededRandom(seed + i);
-    const seats = Math.floor(r * 8);
-    const available = r > 0.25;
-    const [h, m] = dep.split(':').map(Number);
-    const durH = parseInt(durations[i]);
-    const arrH = (h + durH) % 24;
-    const arrival = `${String(arrH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-
-    return {
-      id: `${origin}-${destination}-${date}-${i}`,
+  return [
+    {
+      id: '1',
       airline: 'Volaris',
-      flightNumber: `Y4 ${100 + i + (seed % 100)}`,
-      departure: dep,
-      arrival,
-      duration: durations[i],
+      flightNumber: `Y4 ${Math.floor(900 * seededRandom(seed + 1)) + 100}`,
+      departure: '6:05 AM',
+      arrival: touchesMexico ? '10:35 AM' : '7:40 AM',
+      duration: touchesMexico ? '4h 30m' : '1h 35m',
       stops: 0,
-      price: available ? (isMX ? 596 : 0) : 0,
+      price: touchesMexico ? 596 : 0,
       currency: 'MXN',
-      seatsLeft: seats,
-      available,
-    };
-  });
+      seatsLeft: 3,
+      available: true,
+    },
+    {
+      id: '2',
+      airline: 'Volaris',
+      flightNumber: `Y4 ${Math.floor(900 * seededRandom(seed + 2)) + 100}`,
+      departure: '10:20 AM',
+      arrival: touchesMexico ? '2:55 PM' : '11:55 AM',
+      duration: touchesMexico ? '4h 35m' : '1h 35m',
+      stops: 0,
+      price: touchesMexico ? 596 : 0,
+      currency: 'MXN',
+      seatsLeft: 7,
+      available: true,
+    },
+    {
+      id: '3',
+      airline: 'Volaris',
+      flightNumber: `Y4 ${Math.floor(900 * seededRandom(seed + 3)) + 100}`,
+      departure: '2:45 PM',
+      arrival: touchesMexico ? '7:20 PM' : '4:20 PM',
+      duration: touchesMexico ? '4h 35m' : '1h 35m',
+      stops: 0,
+      price: touchesMexico ? 596 : 0,
+      currency: 'MXN',
+      seatsLeft: 0,
+      available: false,
+    },
+    {
+      id: '4',
+      airline: 'Volaris',
+      flightNumber: `Y4 ${Math.floor(900 * seededRandom(seed + 4)) + 100}`,
+      departure: '7:10 PM',
+      arrival: touchesMexico ? '11:45 PM' : '8:45 PM',
+      duration: touchesMexico ? '4h 35m' : '1h 35m',
+      stops: 0,
+      price: touchesMexico ? 596 : 0,
+      currency: 'MXN',
+      seatsLeft: 2,
+      available: true,
+    },
+  ];
 }
 
 // Returns 0=unavailable, 1=limited, 2=available, 3=good
 export function getCalendarData(origin: string, destination: string, year: number, month: number): Record<number, number> {
-  const seed = (origin + destination + year + month).split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  const monthIndex = month - 1;
+  const seed = (31 * origin.charCodeAt(0)) + destination.charCodeAt(0);
   const daysInMonth = new Date(year, month, 0).getDate();
   const result: Record<number, number> = {};
+  const today = new Date();
 
-  for (let day = 1; day <= daysInMonth; day++) {
-    const r = seededRandom(seed + day);
-    if (r < 0.2) result[day] = 0;
-    else if (r < 0.45) result[day] = 1;
-    else if (r < 0.75) result[day] = 2;
-    else result[day] = 3;
+  today.setHours(0, 0, 0, 0);
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const currentDate = new Date(year, monthIndex, day);
+
+    if (currentDate < today) {
+      result[day] = 0;
+      continue;
+    }
+
+    const randomValue = seededRandom(seed + (366 * year) + (31 * monthIndex) + day);
+    const weekday = currentDate.getDay();
+
+    if (weekday === 0 || weekday === 6) {
+      result[day] = randomValue > 0.3 ? 3 : 1;
+    } else if (weekday === 5) {
+      result[day] = randomValue > 0.4 ? 2 : 1;
+    } else {
+      result[day] = randomValue > 0.7 ? 2 : randomValue > 0.4 ? 1 : 0;
+    }
   }
+
   return result;
 }

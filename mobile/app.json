@@ -1,37 +1,21 @@
 {
   "expo": {
-    "name": "VolarFácil",
+    "name": "VolarF\u00e1cil",
     "slug": "volarfacil",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "scheme": "volarfacil",
     "userInterfaceStyle": "dark",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#111827"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.volarfacil.app"
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#111827"
-      },
       "package": "com.volarfacil.app"
     },
     "plugins": [
       "expo-router",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#22c55e"
-        }
-      ]
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true

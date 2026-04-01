@@ -1,53 +1,68 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, ActivityIndicator
+  View, Text, ScrollView, TouchableOpacity, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AIRPORTS, US_AIRPORTS, MX_AIRPORTS } from '~/lib/airports';
+import { useLocalSearchParams } from 'expo-router';
+import { AIRPORTS } from '~/lib/airports';
 import { getMockFlights, Flight } from '~/lib/mockData';
 import AirportPicker from '~/components/AirportPicker';
 import DatePicker from '~/components/DatePicker';
 import FlightCard from '~/components/FlightCard';
 
 const QUICK_ROUTES = [
-  { from: 'OAK', to: 'MEX' },
-  { from: 'OAK', to: 'GDL' },
-  { from: 'LAX', to: 'MEX' },
+  { from: 'OAK', to: 'MLM' },
   { from: 'LAX', to: 'GDL' },
-  { from: 'SFO', to: 'CUN' },
-  { from: 'OAK', to: 'MOR' },
+  { from: 'OAK', to: 'MEX' },
+  { from: 'SFO', to: 'MTY' },
+  { from: 'LAX', to: 'CUN' },
+  { from: 'SMF', to: 'MLM' },
 ];
 
 export default function SearchScreen() {
+  const params = useLocalSearchParams<{
+    origin?: string;
+    destination?: string;
+    date?: string;
+  }>();
+
   const [origin, setOrigin] = useState('OAK');
-  const [destination, setDestination] = useState('MEX');
+  const [destination, setDestination] = useState('MLM');
   const [date, setDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 7);
-    return d.toISOString().split('T')[0];
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    return nextWeek.toISOString().split('T')[0];
   });
   const [flights, setFlights] = useState<Flight[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
   function swap() {
-    const allCodes = AIRPORTS.map(a => a.code);
-    const originValid = allCodes.includes(destination);
-    const destValid = allCodes.includes(origin);
-    if (originValid && destValid) {
-      setOrigin(destination);
-      setDestination(origin);
-    }
+    setOrigin(destination);
+    setDestination(origin);
   }
 
-  async function search() {
+  async function runSearch(nextOrigin = origin, nextDestination = destination, nextDate = date) {
     setLoading(true);
     setSearched(true);
-    await new Promise(r => setTimeout(r, 800));
-    const results = getMockFlights(origin, destination, date);
-    setFlights(results);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setFlights(getMockFlights(nextOrigin, nextDestination, nextDate));
     setLoading(false);
   }
+
+  useEffect(() => {
+    if (typeof params.origin === 'string') setOrigin(params.origin);
+    if (typeof params.destination === 'string') setDestination(params.destination);
+    if (typeof params.date === 'string') setDate(params.date);
+
+    if (
+      typeof params.origin === 'string' &&
+      typeof params.destination === 'string' &&
+      typeof params.date === 'string'
+    ) {
+      void runSearch(params.origin, params.destination, params.date);
+    }
+  }, [params.date, params.destination, params.origin]);
 
   function quickSearch(from: string, to: string) {
     setOrigin(from);
@@ -57,24 +72,22 @@ export default function SearchScreen() {
   }
 
   const originAirport = AIRPORTS.find(a => a.code === origin);
-  const destAirport = AIRPORTS.find(a => a.code === destination);
+  const destinationAirport = AIRPORTS.find(a => a.code === destination);
 
   return (
     <SafeAreaView className="flex-1 bg-gray-950">
       <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
-        {/* Header */}
         <View className="px-5 pt-4 pb-2">
-          <Text className="text-2xl font-bold text-white">VolarFácil ✈️</Text>
-          <Text className="text-gray-400 text-sm mt-1">Encuentra vuelos del Pase Volaris</Text>
+          <Text className="text-2xl font-bold text-white">{'VolarF\u00e1cil \u2708\uFE0F'}</Text>
+          <Text className="mt-1 text-sm text-gray-400">Encuentra vuelos del Pase Volaris</Text>
         </View>
 
-        {/* Search form */}
-        <View className="mx-4 mt-3 bg-gray-900 rounded-2xl p-4 gap-3">
-          <View className="flex-row gap-2 items-center">
+        <View className="mx-4 mt-3 gap-3 rounded-2xl bg-gray-900 p-4">
+          <View className="flex-row items-center gap-2">
             <View className="flex-1">
-              <Text className="text-gray-400 text-xs mb-1">Origen</Text>
+              <Text className="mb-1 text-xs text-gray-400">Origen</Text>
               <AirportPicker
-                airports={US_AIRPORTS}
+                airports={AIRPORTS}
                 value={origin}
                 onChange={setOrigin}
                 placeholder="Seleccionar"
@@ -82,14 +95,14 @@ export default function SearchScreen() {
             </View>
             <TouchableOpacity
               onPress={swap}
-              className="w-10 h-10 bg-gray-800 rounded-full items-center justify-center mt-4"
+              className="mt-4 h-10 w-10 items-center justify-center rounded-full bg-gray-800"
             >
-              <Text className="text-white text-lg">⇄</Text>
+              <Text className="text-lg text-white">{'\u21C4'}</Text>
             </TouchableOpacity>
             <View className="flex-1">
-              <Text className="text-gray-400 text-xs mb-1">Destino</Text>
+              <Text className="mb-1 text-xs text-gray-400">Destino</Text>
               <AirportPicker
-                airports={MX_AIRPORTS}
+                airports={AIRPORTS}
                 value={destination}
                 onChange={setDestination}
                 placeholder="Seleccionar"
@@ -98,37 +111,38 @@ export default function SearchScreen() {
           </View>
 
           <View>
-            <Text className="text-gray-400 text-xs mb-1">Fecha</Text>
+            <Text className="mb-1 text-xs text-gray-400">Fecha</Text>
             <DatePicker value={date} onChange={setDate} />
           </View>
 
           <TouchableOpacity
-            className="bg-green-500 rounded-xl py-3 mt-1"
-            onPress={search}
+            className="mt-1 rounded-xl bg-green-500 py-3"
+            onPress={() => void runSearch()}
             disabled={loading}
           >
-            {loading
-              ? <ActivityIndicator color="white" />
-              : <Text className="text-white text-center font-semibold text-base">Buscar vuelos</Text>
-            }
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text className="text-center text-base font-semibold text-white">Buscar vuelos</Text>
+            )}
           </TouchableOpacity>
         </View>
 
-        {/* Quick routes */}
         {!searched && (
           <View className="mt-4 px-4">
-            <Text className="text-gray-400 text-sm mb-2">Rutas populares</Text>
+            <Text className="mb-2 text-sm text-gray-400">Rutas populares</Text>
             <View className="flex-row flex-wrap gap-2">
-              {QUICK_ROUTES.map(r => {
-                const o = AIRPORTS.find(a => a.code === r.from);
-                const d = AIRPORTS.find(a => a.code === r.to);
+              {QUICK_ROUTES.map(route => {
+                const fromAirport = AIRPORTS.find(a => a.code === route.from);
+                const toAirport = AIRPORTS.find(a => a.code === route.to);
+
                 return (
                   <TouchableOpacity
-                    key={`${r.from}-${r.to}`}
-                    onPress={() => quickSearch(r.from, r.to)}
-                    className="bg-gray-800 rounded-xl px-3 py-2"
+                    key={`${route.from}-${route.to}`}
+                    onPress={() => quickSearch(route.from, route.to)}
+                    className="rounded-xl bg-gray-800 px-3 py-2"
                   >
-                    <Text className="text-white text-xs">{o?.city} → {d?.city}</Text>
+                    <Text className="text-xs text-white">{fromAirport?.city} {'\u2192'} {toAirport?.city}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -136,16 +150,15 @@ export default function SearchScreen() {
           </View>
         )}
 
-        {/* Results */}
         {searched && !loading && (
           <View className="mt-4 px-4 pb-8">
-            <Text className="text-white font-semibold mb-3">
-              {originAirport?.city} → {destAirport?.city} · {date}
+            <Text className="mb-3 font-semibold text-white">
+              {originAirport?.city} {'\u2192'} {destinationAirport?.city} {'\u00B7'} {date}
             </Text>
             {flights.length === 0 ? (
-              <Text className="text-gray-400 text-center mt-8">Sin vuelos disponibles</Text>
+              <Text className="mt-8 text-center text-gray-400">Sin vuelos disponibles</Text>
             ) : (
-              flights.map(f => <FlightCard key={f.id} flight={f} />)
+              flights.map(flight => <FlightCard key={flight.id} flight={flight} />)
             )}
           </View>
         )}

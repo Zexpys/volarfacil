@@ -25,21 +25,21 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Buscar',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🔍" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon emoji={'\u{1F50D}'} focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="calendar"
         options={{
           title: 'Calendario',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="📅" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon emoji={'\u{1F4C5}'} focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="account"
         options={{
           title: 'Cuenta',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="👤" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon emoji={'\u{1F464}'} focused={focused} />,
         }}
       />
     </Tabs>

@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { US_AIRPORTS, MX_AIRPORTS, AIRPORTS } from '~/lib/airports';
+import { AIRPORTS } from '~/lib/airports';
 import { getCalendarData } from '~/lib/mockData';
 import AirportPicker from '~/components/AirportPicker';
 
 const STATUS_COLORS = ['bg-gray-700', 'bg-yellow-500', 'bg-green-400', 'bg-green-500'];
 const STATUS_LABELS = ['Sin asientos', 'Limitado', 'Disponible', 'Buena disp.'];
-const WEEKDAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const WEEKDAYS = ['Dom', 'Lun', 'Mar', 'Mi\u00e9', 'Jue', 'Vie', 'S\u00e1b'];
+const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -17,87 +17,93 @@ export default function CalendarScreen() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [origin, setOrigin] = useState('OAK');
-  const [destination, setDestination] = useState('MEX');
+  const [destination, setDestination] = useState('MLM');
 
   const availability = getCalendarData(origin, destination, year, month);
   const firstDay = new Date(year, month - 1, 1).getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
 
   function prevMonth() {
-    if (month === 1) { setMonth(12); setYear(y => y - 1); }
-    else setMonth(m => m - 1);
+    if (month === 1) {
+      setMonth(12);
+      setYear(currentYear => currentYear - 1);
+    } else {
+      setMonth(currentMonth => currentMonth - 1);
+    }
   }
 
   function nextMonth() {
-    if (month === 12) { setMonth(1); setYear(y => y + 1); }
-    else setMonth(m => m + 1);
+    if (month === 12) {
+      setMonth(1);
+      setYear(currentYear => currentYear + 1);
+    } else {
+      setMonth(currentMonth => currentMonth + 1);
+    }
   }
 
   function handleDayPress(day: number) {
     const status = availability[day] ?? 0;
     if (status === 0) return;
-    const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    router.push({ pathname: '/(tabs)', params: { origin, destination, date: dateStr } });
+
+    const dateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    router.push({ pathname: '/(tabs)', params: { origin, destination, date: dateString } });
   }
 
-  const cells = [];
-  for (let i = 0; i < firstDay; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  const cells: Array<number | null> = [];
+  for (let index = 0; index < firstDay; index += 1) cells.push(null);
+  for (let day = 1; day <= daysInMonth; day += 1) cells.push(day);
 
-  const totalAvail = Object.values(availability).filter(v => v > 0).length;
-  const goodAvail = Object.values(availability).filter(v => v >= 2).length;
-  const soldOut = Object.values(availability).filter(v => v === 0).length;
+  const totalAvailable = Object.values(availability).filter(value => value > 0).length;
+  const goodAvailability = Object.values(availability).filter(value => value >= 2).length;
+  const soldOut = Object.values(availability).filter(value => value === 0).length;
 
   return (
     <SafeAreaView className="flex-1 bg-gray-950">
       <ScrollView className="flex-1">
         <View className="px-5 pt-4 pb-2">
-          <Text className="text-2xl font-bold text-white">Calendario 📅</Text>
-          <Text className="text-gray-400 text-sm mt-1">Disponibilidad mensual</Text>
+          <Text className="text-2xl font-bold text-white">{'Calendario \u{1F4C5}'}</Text>
+          <Text className="mt-1 text-sm text-gray-400">Disponibilidad mensual</Text>
         </View>
 
-        {/* Pickers */}
-        <View className="mx-4 mt-2 bg-gray-900 rounded-2xl p-4 flex-row gap-3">
+        <View className="mx-4 mt-2 flex-row gap-3 rounded-2xl bg-gray-900 p-4">
           <View className="flex-1">
-            <Text className="text-gray-400 text-xs mb-1">Origen</Text>
-            <AirportPicker airports={US_AIRPORTS} value={origin} onChange={setOrigin} placeholder="Origen" />
+            <Text className="mb-1 text-xs text-gray-400">Origen</Text>
+            <AirportPicker airports={AIRPORTS} value={origin} onChange={setOrigin} placeholder="Origen" />
           </View>
           <View className="flex-1">
-            <Text className="text-gray-400 text-xs mb-1">Destino</Text>
-            <AirportPicker airports={MX_AIRPORTS} value={destination} onChange={setDestination} placeholder="Destino" />
+            <Text className="mb-1 text-xs text-gray-400">Destino</Text>
+            <AirportPicker airports={AIRPORTS} value={destination} onChange={setDestination} placeholder="Destino" />
           </View>
         </View>
 
-        {/* Month nav */}
-        <View className="flex-row items-center justify-between mx-4 mt-4">
+        <View className="mx-4 mt-4 flex-row items-center justify-between">
           <TouchableOpacity onPress={prevMonth} className="p-2">
-            <Text className="text-white text-xl">‹</Text>
+            <Text className="text-xl text-white">{'\u2039'}</Text>
           </TouchableOpacity>
-          <Text className="text-white font-semibold text-base">{MONTHS[month - 1]} {year}</Text>
+          <Text className="text-base font-semibold text-white">{MONTHS[month - 1]} {year}</Text>
           <TouchableOpacity onPress={nextMonth} className="p-2">
-            <Text className="text-white text-xl">›</Text>
+            <Text className="text-xl text-white">{'\u203A'}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Calendar grid */}
         <View className="mx-4 mt-2">
-          <View className="flex-row mb-1">
-            {WEEKDAYS.map(w => (
-              <View key={w} className="flex-1 items-center">
-                <Text className="text-gray-500 text-xs">{w}</Text>
+          <View className="mb-1 flex-row">
+            {WEEKDAYS.map(weekday => (
+              <View key={weekday} className="flex-1 items-center">
+                <Text className="text-xs text-gray-500">{weekday}</Text>
               </View>
             ))}
           </View>
           <View className="flex-row flex-wrap">
-            {cells.map((day, i) => (
-              <View key={i} className="w-[14.28%] p-0.5">
+            {cells.map((day, index) => (
+              <View key={`${day ?? 'blank'}-${index}`} className="w-[14.28%] p-0.5">
                 {day === null ? (
                   <View className="aspect-square" />
                 ) : (
                   <TouchableOpacity
                     onPress={() => handleDayPress(day)}
                     disabled={(availability[day] ?? 0) === 0}
-                    className={`aspect-square rounded-lg items-center justify-center ${STATUS_COLORS[availability[day] ?? 0]}`}
+                    className={`aspect-square items-center justify-center rounded-lg ${STATUS_COLORS[availability[day] ?? 0]}`}
                   >
                     <Text className={`text-xs font-medium ${(availability[day] ?? 0) === 0 ? 'text-gray-500' : 'text-gray-900'}`}>
                       {day}
@@ -109,26 +115,24 @@ export default function CalendarScreen() {
           </View>
         </View>
 
-        {/* Legend */}
-        <View className="flex-row flex-wrap gap-3 mx-4 mt-4">
-          {STATUS_LABELS.map((label, i) => (
-            <View key={i} className="flex-row items-center gap-1">
-              <View className={`w-3 h-3 rounded-full ${STATUS_COLORS[i]}`} />
-              <Text className="text-gray-400 text-xs">{label}</Text>
+        <View className="mx-4 mt-4 flex-row flex-wrap gap-3">
+          {STATUS_LABELS.map((label, index) => (
+            <View key={label} className="flex-row items-center gap-1">
+              <View className={`h-3 w-3 rounded-full ${STATUS_COLORS[index]}`} />
+              <Text className="text-xs text-gray-400">{label}</Text>
             </View>
           ))}
         </View>
 
-        {/* Stats */}
-        <View className="flex-row mx-4 mt-4 mb-8 gap-3">
+        <View className="mx-4 mt-4 mb-8 flex-row gap-3">
           {[
-            { label: 'Con asientos', value: totalAvail },
-            { label: 'Buena disp.', value: goodAvail },
+            { label: 'Con asientos', value: totalAvailable },
+            { label: 'Buena disp.', value: goodAvailability },
             { label: 'Sin asientos', value: soldOut },
           ].map(stat => (
-            <View key={stat.label} className="flex-1 bg-gray-900 rounded-xl p-3 items-center">
-              <Text className="text-white text-xl font-bold">{stat.value}</Text>
-              <Text className="text-gray-400 text-xs mt-1 text-center">{stat.label}</Text>
+            <View key={stat.label} className="flex-1 items-center rounded-xl bg-gray-900 p-3">
+              <Text className="text-xl font-bold text-white">{stat.value}</Text>
+              <Text className="mt-1 text-center text-xs text-gray-400">{stat.label}</Text>
             </View>
           ))}
         </View>

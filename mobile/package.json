@@ -7,7 +7,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "postinstall": "node -e \"const fs=require('fs');const pkgs=['metro','metro-cache','metro-config','metro-core','metro-file-map','metro-resolver','metro-runtime','metro-source-map','metro-transform-worker','metro-babel-transformer'];let n=0;for(const pkg of pkgs){try{const p=require.resolve(pkg+'/package.json');const j=JSON.parse(fs.readFileSync(p,'utf8'));if(j.exports&&!j.exports['./src/*']){j.exports['./src/*']='./src/*.js';fs.writeFileSync(p,JSON.stringify(j));n++;console.log('Patched '+pkg)}}catch(e){}}console.log('Done: '+n+' packages patched')\""
+    "postinstall": "node scripts/postinstall.js"
   },
   "dependencies": {
     "expo": "~52.0.36",
@@ -19,7 +19,7 @@
     "react": "18.3.1",
     "react-native": "0.76.9",
     "@supabase/supabase-js": "^2.49.4",
-    "@react-native-async-storage/async-storage": "2.1.2",
+    "@react-native-async-storage/async-storage": "1.23.1",
     "react-native-url-polyfill": "^2.0.0",
     "nativewind": "^4.1.23",
     "tailwindcss": "^3.4.1",

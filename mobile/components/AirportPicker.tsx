@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, Modal, FlatList, TextInput, Pressable
+  View, Text, TouchableOpacity, Modal, FlatList, TextInput, Pressable,
 } from 'react-native';
 import { Airport } from '~/lib/airports';
 
@@ -18,8 +18,7 @@ export default function AirportPicker({ airports, value, onChange, placeholder }
   const selected = airports.find(a => a.code === value);
   const filtered = airports.filter(a =>
     a.city.toLowerCase().includes(query.toLowerCase()) ||
-    a.code.toLowerCase().includes(query.toLowerCase())
-  );
+    a.code.toLowerCase().includes(query.toLowerCase()));
 
   function select(code: string) {
     onChange(code);
@@ -31,27 +30,29 @@ export default function AirportPicker({ airports, value, onChange, placeholder }
     <>
       <TouchableOpacity
         onPress={() => setOpen(true)}
-        className="bg-gray-800 rounded-xl px-3 py-3 flex-row justify-between items-center"
+        className="flex-row items-center justify-between rounded-xl bg-gray-800 px-3 py-3"
       >
         <View>
-          <Text className="text-white font-semibold">{selected?.code ?? '---'}</Text>
-          <Text className="text-gray-400 text-xs" numberOfLines={1}>{selected?.city ?? placeholder}</Text>
+          <Text className="font-semibold text-white">{selected?.code ?? '---'}</Text>
+          <Text className="text-xs text-gray-400" numberOfLines={1}>
+            {selected?.city ?? placeholder}
+          </Text>
         </View>
-        <Text className="text-gray-500">▾</Text>
+        <Text className="text-gray-500">{'\u25BE'}</Text>
       </TouchableOpacity>
 
       <Modal visible={open} animationType="slide" presentationStyle="pageSheet">
         <View className="flex-1 bg-gray-950 pt-4">
-          <View className="flex-row items-center justify-between px-4 mb-4">
-            <Text className="text-white font-bold text-lg">Seleccionar aeropuerto</Text>
+          <View className="mb-4 flex-row items-center justify-between px-4">
+            <Text className="text-lg font-bold text-white">Seleccionar aeropuerto</Text>
             <TouchableOpacity onPress={() => { setOpen(false); setQuery(''); }}>
-              <Text className="text-green-400 font-semibold">Cerrar</Text>
+              <Text className="font-semibold text-green-400">Cerrar</Text>
             </TouchableOpacity>
           </View>
-          <View className="px-4 mb-3">
+          <View className="mb-3 px-4">
             <TextInput
-              className="bg-gray-800 text-white rounded-xl px-4 py-3"
-              placeholder="Buscar ciudad o código..."
+              className="rounded-xl bg-gray-800 px-4 py-3 text-white"
+              placeholder={'Buscar ciudad o c\u00f3digo...'}
               placeholderTextColor="#6b7280"
               value={query}
               onChangeText={setQuery}
@@ -60,15 +61,15 @@ export default function AirportPicker({ airports, value, onChange, placeholder }
           </View>
           <FlatList
             data={filtered}
-            keyExtractor={a => a.code}
+            keyExtractor={airport => airport.code}
             renderItem={({ item }) => (
               <Pressable
                 onPress={() => select(item.code)}
-                className={`flex-row items-center px-5 py-4 border-b border-gray-800 ${item.code === value ? 'bg-green-900/30' : ''}`}
+                className={`flex-row items-center border-b border-gray-800 px-5 py-4 ${item.code === value ? 'bg-green-900/30' : ''}`}
               >
-                <Text className="text-white font-bold w-12">{item.code}</Text>
-                <Text className="text-gray-300 flex-1">{item.city}</Text>
-                {item.code === value && <Text className="text-green-400">✓</Text>}
+                <Text className="w-12 font-bold text-white">{item.code}</Text>
+                <Text className="flex-1 text-gray-300">{item.city}</Text>
+                {item.code === value && <Text className="text-green-400">{'\u2713'}</Text>}
               </Pressable>
             )}
           />
