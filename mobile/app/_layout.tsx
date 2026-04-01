@@ -2,30 +2,14 @@ import '../global.css';
 import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { Session } from '@supabase/supabase-js';
+import { AuthProvider } from '~/lib/auth-context';
 import { isSupabaseConfigured, supabase, supabaseConfigError } from '~/lib/supabase';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
-
-function AuthGate({ session }: { session: Session | null }) {
-  const segments = useSegments();
-  const router = useRouter();
-
-  useEffect(() => {
-    const inAuth = segments[0] === '(auth)';
-
-    if (!session && !inAuth) {
-      router.replace('/(auth)/login');
-    } else if (session && inAuth) {
-      router.replace('/(tabs)');
-    }
-  }, [router, segments, session]);
-
-  return null;
-}
 
 function ConfigErrorScreen() {
   return (
@@ -72,10 +56,9 @@ export default function RootLayout() {
   if (!isSupabaseConfigured || !supabase) return <ConfigErrorScreen />;
 
   return (
-    <>
-      <AuthGate session={session} />
+    <AuthProvider value={{ ready, session }}>
       <Stack screenOptions={{ headerShown: false }} />
       <StatusBar style="light" />
-    </>
+    </AuthProvider>
   );
 }
